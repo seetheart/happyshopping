@@ -1,5 +1,7 @@
 package com.ecommerce.happyshopping.service;
 
+import com.ecommerce.happyshopping.exceptions.APIException;
+import com.ecommerce.happyshopping.exceptions.ResourceNotFoundException;
 import com.ecommerce.happyshopping.model.Category;
 import com.ecommerce.happyshopping.repositories.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,11 +23,20 @@ public class CategoryServiceImpl implements CategoryService{
 
     @Override
     public List<Category> getAllCategories() {
-        return categoryRepository.findAll();
+        List<Category> categories = categoryRepository.findAll();
+
+        if (categories.isEmpty()) {
+            throw new APIException("No categories found");
+        }
+        return categories;
     }
 
     @Override
     public void createCategory(Category category) {
+        Category savedCategory = categoryRepository.findByCategoryName(category.getCategoryName());
+        if(savedCategory != null){
+            throw new APIException("Category already exists");
+        }
         categoryRepository.save(category);
     }
 
@@ -33,7 +44,7 @@ public class CategoryServiceImpl implements CategoryService{
     public String deleteCategory(Long id) {
 
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Resource not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Category", id, "categoryId" ));
         categoryRepository.delete(category);
         return "Deleted category";
 //        List<Category> categories = categoryRepository.findAll();
@@ -54,7 +65,7 @@ public class CategoryServiceImpl implements CategoryService{
         // it can be done this way but above is preferred way
 
         Category savedCategory = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Category", id, "categoryId" ));
 
         category.setCategoryId(id);
         categoryRepository.save(category);
